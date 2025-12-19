@@ -4,23 +4,23 @@ import { useState, useCallback } from 'react'
 import { FileUploader } from '@/components/FileUploader'
 import { HelpButton } from '@/components/HelpButton'
 import { LibraryButton } from '@/components/LibraryButton'
-import { MindMapViewerModal } from '@/components/MindMapViewerModal'
+import { MindmapViewerModal } from '@/components/MindmapViewerModal'
 import { DavidButton } from '@/components/DavidButton'
 import { StandardRenderButton } from '@/components/StandardRenderButton'
 import { MindMapCreationModal } from '@/components/MindMapCreationModal'
 import { parseMMFileFromFile } from '@/lib/mm-parser'
-import { generateMindMapHTML, downloadFile } from '@/lib/html-generator'
-import type { MindMapNode } from '@/lib/types'
+import { generateMindmapHTML, downloadFile } from '@/lib/html-generator'
+import type { MindmapNode } from '@/lib/types'
 
 export default function Home() {
-  const [parsedData, setParsedData] = useState<MindMapNode | null>(null)
+  const [parsedData, setParsedData] = useState<MindmapNode | null>(null)
   const [outputName, setOutputName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   
   // Viewer modal state
   const [isViewerOpen, setIsViewerOpen] = useState(false)
-  const [viewerData, setViewerData] = useState<MindMapNode | null>(null)
+  const [viewerData, setViewerData] = useState<MindmapNode | null>(null)
   const [viewerTitle, setViewerTitle] = useState('')
 
   // David mode state
@@ -52,7 +52,7 @@ export default function Home() {
       ? outputName.trim()
       : `${outputName.trim()}.html`
 
-    const html = generateMindMapHTML(parsedData, outputName.trim())
+    const html = generateMindmapHTML(parsedData, outputName.trim())
     downloadFile(html, filename)
   }, [parsedData, outputName])
 
@@ -66,7 +66,7 @@ export default function Home() {
   const handleSaveToLibrary = useCallback(async (title: string) => {
     if (!viewerData) return
 
-    const response = await fetch('/api/MindMaps', {
+    const response = await fetch('/api/mindmaps', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,13 +78,13 @@ export default function Home() {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to save MindMap')
+      throw new Error('Failed to save mindmap')
     }
   }, [viewerData])
 
-  // Handler for saving MindMap from creation modal
-  const handleSaveCreatedMindMap = useCallback(async (title: string, data: MindMapNode) => {
-    const response = await fetch('/api/MindMaps', {
+  // Handler for saving mindmap from creation modal
+  const handleSaveCreatedMindmap = useCallback(async (title: string, data: MindmapNode) => {
+    const response = await fetch('/api/mindmaps', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -96,12 +96,12 @@ export default function Home() {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to save MindMap')
+      throw new Error('Failed to save mindmap')
     }
   }, [])
 
-  // Handler for opening MindMap from library
-  const handleOpenFromLibrary = useCallback((data: MindMapNode, title: string) => {
+  // Handler for opening mindmap from library
+  const handleOpenFromLibrary = useCallback((data: MindmapNode, title: string) => {
     setViewerData(data)
     setViewerTitle(title)
     setIsViewerOpen(true)
@@ -113,10 +113,10 @@ export default function Home() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-semibold text-zinc-100 mb-2">
-          MindMap Render
+          Mindmap Render
         </h1>
         <p className="text-zinc-400">
-          Convert FreeMind (.mm) files to interactive HTML MindMaps
+          Convert FreeMind (.mm) files to interactive HTML mindmaps
         </p>
       </div>
 
@@ -200,7 +200,7 @@ export default function Home() {
                   type="text"
                   value={outputName}
                   onChange={(e) => setOutputName(e.target.value)}
-                  placeholder="my-MindMap"
+                  placeholder="my-mindmap"
                   className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700
                            text-zinc-100 placeholder:text-zinc-500
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -214,7 +214,7 @@ export default function Home() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              {/* View MindMap Button */}
+              {/* View Mindmap Button */}
               <button
                 onClick={handleView}
                 disabled={!outputName.trim()}
@@ -242,7 +242,7 @@ export default function Home() {
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                   />
                 </svg>
-                View MindMap
+                View Mindmap
               </button>
 
               {/* Download Button */}
@@ -267,7 +267,7 @@ export default function Home() {
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                   />
                 </svg>
-                Download MindMap
+                Download Mindmap
               </button>
             </div>
           </div>
@@ -299,7 +299,7 @@ export default function Home() {
           : 'items-center justify-center'
       }`}>
         <HelpButton />
-        <LibraryButton onOpenMindMap={handleOpenFromLibrary} />
+        <LibraryButton onOpenMindmap={handleOpenFromLibrary} />
         
         {/* Mode toggle button */}
         {isDavidMode ? (
@@ -361,12 +361,12 @@ export default function Home() {
           StandardContent
         )}
 
-        {/* MindMap Viewer Modal */}
+        {/* Mindmap Viewer Modal */}
         {viewerData && (
-          <MindMapViewerModal
+          <MindmapViewerModal
             isOpen={isViewerOpen}
             onClose={() => setIsViewerOpen(false)}
-            MindMapData={viewerData}
+            mindmapData={viewerData}
             title={viewerTitle}
             onSaveToLibrary={handleSaveToLibrary}
             showSaveButton={true}
@@ -377,7 +377,7 @@ export default function Home() {
         <MindMapCreationModal
           isOpen={isCreationModalOpen}
           onClose={() => setIsCreationModalOpen(false)}
-          onSave={handleSaveCreatedMindMap}
+          onSave={handleSaveCreatedMindmap}
         />
       </main>
     </>

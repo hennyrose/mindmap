@@ -28,11 +28,11 @@ function createEmptyNode(text: string = ''): EditorNode {
   }
 }
 
-// Convert EditorNode to MindMapNode format for saving
-function convertToMindMapNode(node: EditorNode): { text: string; children: { text: string; children: unknown[]; _expanded?: boolean }[]; _expanded?: boolean } {
+// Convert EditorNode to MindmapNode format for saving
+function convertToMindmapNode(node: EditorNode): { text: string; children: { text: string; children: unknown[]; _expanded?: boolean }[]; _expanded?: boolean } {
   return {
     text: node.text,
-    children: node.children.map(convertToMindMapNode),
+    children: node.children.map(convertToMindmapNode),
     _expanded: node.isExpanded,
   }
 }
@@ -211,8 +211,8 @@ export function MindMapCreationModal({
   onClose,
   onSave,
 }: MindMapCreationModalProps) {
-  const [rootNode, setRootNode] = useState<EditorNode>(() => createEmptyNode('New MindMap'))
-  const [title, setTitle] = useState('New MindMap')
+  const [rootNode, setRootNode] = useState<EditorNode>(() => createEmptyNode('New Mindmap'))
+  const [title, setTitle] = useState('New Mindmap')
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -220,8 +220,8 @@ export function MindMapCreationModal({
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setRootNode(createEmptyNode('New MindMap'))
-      setTitle('New MindMap')
+      setRootNode(createEmptyNode('New Mindmap'))
+      setTitle('New Mindmap')
       setSaveSuccess(false)
       setHasChanges(false)
     }
@@ -323,8 +323,8 @@ export function MindMapCreationModal({
 
     setIsSaving(true)
     try {
-      const MindMapData = convertToMindMapNode(rootNode)
-      await onSave(title || 'Draft', MindMapData as never)
+      const mindmapData = convertToMindmapNode(rootNode)
+      await onSave(title || 'Draft', mindmapData as never)
       setSaveSuccess(true)
       setHasChanges(false)
       setTimeout(() => setSaveSuccess(false), 2000)
@@ -340,22 +340,22 @@ export function MindMapCreationModal({
     if (hasChanges && onSave) {
       try {
         // Generate Draft name
-        const response = await fetch('/api/MindMaps')
-        const MindMaps = await response.json()
+        const response = await fetch('/api/mindmaps')
+        const mindmaps = await response.json()
         
-        // Count existing Draft MindMaps
+        // Count existing Draft mindmaps
         const DraftPattern = /^Draft-mm-(\d+)$/
         let maxNumber = 0
-        MindMaps.forEach((mm: { title: string }) => {
+        mindmaps.forEach((mm: { title: string }) => {
           const match = mm.title.match(DraftPattern)
           if (match) {
             maxNumber = Math.max(maxNumber, parseInt(match[1], 10))
           }
         })
         
-        const autoSaveTitle = title && title !== 'New MindMap' ? title : `Draft-mm-${maxNumber + 1}`
-        const MindMapData = convertToMindMapNode(rootNode)
-        await onSave(autoSaveTitle, MindMapData as never)
+        const autoSaveTitle = title && title !== 'New Mindmap' ? title : `Draft-mm-${maxNumber + 1}`
+        const mindmapData = convertToMindmapNode(rootNode)
+        await onSave(autoSaveTitle, mindmapData as never)
       } catch (error) {
         console.error('Auto-save failed:', error)
       }
@@ -399,7 +399,7 @@ export function MindMapCreationModal({
                 setTitle(e.target.value)
                 setHasChanges(true)
               }}
-              placeholder="MindMap title..."
+              placeholder="Mindmap title..."
               className="px-3 py-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700/50
                        text-zinc-100 text-sm placeholder:text-zinc-500
                        focus:outline-none focus:ring-2 focus:ring-blue-500/50

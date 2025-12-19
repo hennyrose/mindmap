@@ -1,28 +1,28 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import type { SavedMindMap } from '@/lib/types'
+import type { SavedMindmap } from '@/lib/types'
 
 interface LibraryModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectMindMap: (MindMap: SavedMindMap) => void
+  onSelectMindmap: (mindmap: SavedMindmap) => void
 }
 
 export function LibraryModal({
   isOpen,
   onClose,
-  onSelectMindMap,
+  onSelectMindmap,
 }: LibraryModalProps) {
-  const [MindMaps, setMindMaps] = useState<SavedMindMap[]>([])
+  const [mindmaps, setMindmaps] = useState<SavedMindmap[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Fetch MindMaps when modal opens
+  // Fetch mindmaps when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchMindMaps()
+      fetchMindmaps()
     }
   }, [isOpen])
 
@@ -49,16 +49,16 @@ export function LibraryModal({
     }
   }, [isOpen])
 
-  const fetchMindMaps = async () => {
+  const fetchMindmaps = async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/MindMaps')
+      const response = await fetch('/api/mindmaps')
       if (!response.ok) {
-        throw new Error('Failed to fetch MindMaps')
+        throw new Error('Failed to fetch mindmaps')
       }
       const data = await response.json()
-      setMindMaps(data)
+      setMindmaps(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load library')
     } finally {
@@ -72,13 +72,13 @@ export function LibraryModal({
 
     setDeletingId(id)
     try {
-      const response = await fetch(`/api/MindMaps/${id}`, {
+      const response = await fetch(`/api/mindmaps/${id}`, {
         method: 'DELETE',
       })
       if (!response.ok) {
-        throw new Error('Failed to delete MindMap')
+        throw new Error('Failed to delete mindmap')
       }
-      setMindMaps((prev) => prev.filter((m) => m.id !== id))
+      setMindmaps((prev) => prev.filter((m) => m.id !== id))
     } catch (err) {
       console.error('Delete failed:', err)
     } finally {
@@ -123,9 +123,9 @@ export function LibraryModal({
               />
             </svg>
             <h2 className="text-lg font-medium text-zinc-100">Library</h2>
-            {MindMaps.length > 0 && (
+            {mindmaps.length > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-xs">
-                {MindMaps.length}
+                {mindmaps.length}
               </span>
             )}
           </div>
@@ -185,7 +185,7 @@ export function LibraryModal({
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
               <button
-                onClick={fetchMindMaps}
+                onClick={fetchMindmaps}
                 className="px-4 py-2 rounded-lg text-sm font-medium
                          bg-zinc-800 hover:bg-zinc-700 text-zinc-300
                          transition-all duration-150"
@@ -193,7 +193,7 @@ export function LibraryModal({
                 Try Again
               </button>
             </div>
-          ) : MindMaps.length === 0 ? (
+          ) : mindmaps.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-center">
               <svg
                 className="w-16 h-16 text-zinc-700 mb-4"
@@ -208,17 +208,17 @@ export function LibraryModal({
                   d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                 />
               </svg>
-              <p className="text-zinc-400 text-lg mb-1">No MindMaps saved yet</p>
+              <p className="text-zinc-400 text-lg mb-1">No mindmaps saved yet</p>
               <p className="text-zinc-600 text-sm">
-                Upload a MindMap and click &quot;Create page&quot; to save it here
+                Upload a mindmap and click &quot;Create page&quot; to save it here
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {MindMaps.map((MindMap) => (
+              {mindmaps.map((mindmap) => (
                 <button
-                  key={MindMap.id}
-                  onClick={() => onSelectMindMap(MindMap)}
+                  key={mindmap.id}
+                  onClick={() => onSelectMindmap(mindmap)}
                   className="group relative text-left p-5 rounded-xl
                            bg-zinc-800/50 hover:bg-zinc-800/80
                            border border-zinc-700/50 hover:border-zinc-600/50
@@ -228,7 +228,7 @@ export function LibraryModal({
                 >
                   {/* Delete button */}
                   <div
-                    onClick={(e) => handleDelete(e, MindMap.id)}
+                    onClick={(e) => handleDelete(e, mindmap.id)}
                     className="absolute top-3 right-3 p-1.5 rounded-lg
                              bg-zinc-700/0 hover:bg-red-500/20
                              text-zinc-500 hover:text-red-400
@@ -237,7 +237,7 @@ export function LibraryModal({
                              cursor-pointer"
                     title="Delete"
                   >
-                    {deletingId === MindMap.id ? (
+                    {deletingId === mindmap.id ? (
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                         <circle
                           className="opacity-25"
@@ -269,10 +269,10 @@ export function LibraryModal({
                   {/* Card content */}
                   <div className="pr-8">
                     <h3 className="text-zinc-100 font-medium mb-2 truncate">
-                      {MindMap.title}
+                      {mindmap.title}
                     </h3>
                     <p className="text-zinc-500 text-sm mb-3 truncate">
-                      {MindMap.rootText}
+                      {mindmap.rootText}
                     </p>
                     <div className="flex items-center gap-4 text-xs text-zinc-600">
                       <span className="flex items-center gap-1">
@@ -284,7 +284,7 @@ export function LibraryModal({
                             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                           />
                         </svg>
-                        {MindMap.childCount} branches
+                        {mindmap.childCount} branches
                       </span>
                       <span className="flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ export function LibraryModal({
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        {formatDate(MindMap.createdAt)}
+                        {formatDate(mindmap.createdAt)}
                       </span>
                     </div>
                   </div>

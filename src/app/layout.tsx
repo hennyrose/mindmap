@@ -9,8 +9,8 @@ const ibmPlexSans = IBM_Plex_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'MindMap Render',
-  description: 'Convert .mm files to interactive HTML MindMaps',
+  title: 'Mindmap Render',
+  description: 'Convert .mm files to interactive HTML mindmaps',
 }
 
 export default function RootLayout({

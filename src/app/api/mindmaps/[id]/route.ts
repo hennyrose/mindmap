@@ -1,66 +1,66 @@
 import { kv } from '@vercel/kv'
 import { NextResponse } from 'next/server'
-import type { SavedMindMap } from '@/lib/types'
+import type { SavedMindmap } from '@/lib/types'
 
-const MindMapS_KEY = 'MindMaps'
+const MINDMAPS_KEY = 'mindmaps'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
 /**
- * GET /api/MindMaps/[id] - Get a single MindMap by ID
+ * GET /api/mindmaps/[id] - Get a single mindmap by ID
  */
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const MindMaps = (await kv.get<SavedMindMap[]>(MindMapS_KEY)) || []
-    const MindMap = MindMaps.find((m) => m.id === id)
+    const mindmaps = (await kv.get<SavedMindmap[]>(MINDMAPS_KEY)) || []
+    const mindmap = mindmaps.find((m) => m.id === id)
 
-    if (!MindMap) {
+    if (!mindmap) {
       return NextResponse.json(
-        { error: 'MindMap not found' },
+        { error: 'Mindmap not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(MindMap)
+    return NextResponse.json(mindmap)
   } catch (error) {
-    console.error('Failed to fetch MindMap:', error)
+    console.error('Failed to fetch mindmap:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch MindMap' },
+      { error: 'Failed to fetch mindmap' },
       { status: 500 }
     )
   }
 }
 
 /**
- * DELETE /api/MindMaps/[id] - Delete a MindMap by ID
+ * DELETE /api/mindmaps/[id] - Delete a mindmap by ID
  */
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const MindMaps = (await kv.get<SavedMindMap[]>(MindMapS_KEY)) || []
-    const index = MindMaps.findIndex((m) => m.id === id)
+    const mindmaps = (await kv.get<SavedMindmap[]>(MINDMAPS_KEY)) || []
+    const index = mindmaps.findIndex((m) => m.id === id)
 
     if (index === -1) {
       return NextResponse.json(
-        { error: 'MindMap not found' },
+        { error: 'Mindmap not found' },
         { status: 404 }
       )
     }
 
-    // Remove the MindMap
-    MindMaps.splice(index, 1)
+    // Remove the mindmap
+    mindmaps.splice(index, 1)
 
     // Save back to KV
-    await kv.set(MindMapS_KEY, MindMaps)
+    await kv.set(MINDMAPS_KEY, mindmaps)
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete MindMap:', error)
+    console.error('Failed to delete mindmap:', error)
     return NextResponse.json(
-      { error: 'Failed to delete MindMap' },
+      { error: 'Failed to delete mindmap' },
       { status: 500 }
     )
   }
