@@ -7,3 +7,59 @@ body {
   color: #e8e8ec;
   min-height: 100vh;
 }
+
+/* Apple Intelligence animated gradient */
+@keyframes gradient-morph {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes gradient-morph-slow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.apple-intelligence-gradient {
+  background: linear-gradient(
+    135deg,
+    #ff6b9d,
+    #c44cff,
+    #6b8cff,
+    #44cfff,
+    #6bffc4,
+    #ffeb6b,
+    #ff6b9d
+  );
+  background-size: 400% 400%;
+  animation: gradient-morph 8s ease infinite;
+}
+
+.apple-intelligence-gradient-slow {
+  background: linear-gradient(
+    135deg,
+    #ff6b9d,
+    #c44cff,
+    #6b8cff,
+    #44cfff,
+    #6bffc4,
+    #ffeb6b,
+    #ff6b9d
+  );
+  background-size: 400% 400%;
+  animation: gradient-morph-slow 15s ease infinite;
+}
+
+/* Glass material effect */
+.glass-material {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-material-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
