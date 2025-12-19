@@ -3,14 +3,22 @@
 import { useState, useCallback } from 'react'
 import { FileUploader } from '@/components/FileUploader'
 import { HelpButton } from '@/components/HelpButton'
-import { parseMMFileFromFile, MindmapNode } from '@/lib/mm-parser'
+import { LibraryButton } from '@/components/LibraryButton'
+import { MindmapViewerModal } from '@/components/MindmapViewerModal'
+import { parseMMFileFromFile } from '@/lib/mm-parser'
 import { generateMindmapHTML, downloadFile } from '@/lib/html-generator'
+import type { MindmapNode } from '@/lib/types'
 
 export default function Home() {
   const [parsedData, setParsedData] = useState<MindmapNode | null>(null)
   const [outputName, setOutputName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  
+  // Viewer modal state
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [viewerData, setViewerData] = useState<MindmapNode | null>(null)
+  const [viewerTitle, setViewerTitle] = useState('')
 
   const handleFileSelect = useCallback(async (file: File) => {
     setError(null)
@@ -41,9 +49,44 @@ export default function Home() {
     downloadFile(html, filename)
   }, [parsedData, outputName])
 
+  const handleView = useCallback(() => {
+    if (!parsedData || !outputName.trim()) return
+    setViewerData(parsedData)
+    setViewerTitle(outputName.trim())
+    setIsViewerOpen(true)
+  }, [parsedData, outputName])
+
+  const handleSaveToLibrary = useCallback(async (title: string) => {
+    if (!viewerData) return
+
+    const response = await fetch('/api/mindmaps', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title,
+        data: viewerData,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to save mindmap')
+    }
+  }, [viewerData])
+
+  // Handler for opening mindmap from library
+  const handleOpenFromLibrary = useCallback((data: MindmapNode, title: string) => {
+    setViewerData(data)
+    setViewerTitle(title)
+    setIsViewerOpen(true)
+  }, [])
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6">
       <HelpButton />
+      <LibraryButton onOpenMindmap={handleOpenFromLibrary} />
+      
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -89,7 +132,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Output Name Input & Download */}
+          {/* Output Name Input & Actions */}
           {parsedData && !isProcessing && (
             <div className="space-y-4">
               {/* Preview Info */}
@@ -147,30 +190,64 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Download Button */}
-              <button
-                onClick={handleDownload}
-                disabled={!outputName.trim()}
-                className="w-full py-3 px-4 rounded-lg font-medium transition-all
-                         bg-blue-600 hover:bg-blue-500 text-white
-                         disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed
-                         flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                {/* View Mindmap Button */}
+                <button
+                  onClick={handleView}
+                  disabled={!outputName.trim()}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all
+                           bg-zinc-700 hover:bg-zinc-600 text-zinc-100
+                           disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed
+                           flex items-center justify-center gap-2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                Download Mindmap
-              </button>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  View Mindmap
+                </button>
+
+                {/* Download Button */}
+                <button
+                  onClick={handleDownload}
+                  disabled={!outputName.trim()}
+                  className="flex-1 py-3 px-4 rounded-lg font-medium transition-all
+                           bg-blue-600 hover:bg-blue-500 text-white
+                           disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed
+                           flex items-center justify-center gap-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Download Mindmap
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -180,6 +257,18 @@ export default function Home() {
           Supports FreeMind / Freeplane .mm format
         </p>
       </div>
+
+      {/* Mindmap Viewer Modal */}
+      {viewerData && (
+        <MindmapViewerModal
+          isOpen={isViewerOpen}
+          onClose={() => setIsViewerOpen(false)}
+          mindmapData={viewerData}
+          title={viewerTitle}
+          onSaveToLibrary={handleSaveToLibrary}
+          showSaveButton={true}
+        />
+      )}
     </main>
   )
 }
