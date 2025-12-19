@@ -280,7 +280,7 @@ export function MindMapCreationModal({
       setRootNode((prev) => updateNodeInTree(prev, id, (node) => ({ ...node, text })))
       setHasChanges(true)
       if (id === rootNode.id) {
-        setTitle(text || 'Untitled')
+        setTitle(text || 'Draft')
       }
     },
     [updateNodeInTree, rootNode.id]
@@ -324,7 +324,7 @@ export function MindMapCreationModal({
     setIsSaving(true)
     try {
       const mindmapData = convertToMindmapNode(rootNode)
-      await onSave(title || 'Untitled', mindmapData as never)
+      await onSave(title || 'Draft', mindmapData as never)
       setSaveSuccess(true)
       setHasChanges(false)
       setTimeout(() => setSaveSuccess(false), 2000)
@@ -339,21 +339,21 @@ export function MindMapCreationModal({
     // Auto-save if there are changes
     if (hasChanges && onSave) {
       try {
-        // Generate untitled name
+        // Generate Draft name
         const response = await fetch('/api/mindmaps')
         const mindmaps = await response.json()
         
-        // Count existing untitled mindmaps
-        const untitledPattern = /^untitled-mm-(\d+)$/
+        // Count existing Draft mindmaps
+        const DraftPattern = /^Draft-mm-(\d+)$/
         let maxNumber = 0
         mindmaps.forEach((mm: { title: string }) => {
-          const match = mm.title.match(untitledPattern)
+          const match = mm.title.match(DraftPattern)
           if (match) {
             maxNumber = Math.max(maxNumber, parseInt(match[1], 10))
           }
         })
         
-        const autoSaveTitle = title && title !== 'New Mindmap' ? title : `untitled-mm-${maxNumber + 1}`
+        const autoSaveTitle = title && title !== 'New Mindmap' ? title : `Draft-mm-${maxNumber + 1}`
         const mindmapData = convertToMindmapNode(rootNode)
         await onSave(autoSaveTitle, mindmapData as never)
       } catch (error) {
