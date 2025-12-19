@@ -1,28 +1,28 @@
 /**
- * Shared TypeScript types for the mindmap library feature
+ * Shared TypeScript types for the MindMap library feature
  */
 
-import type { MindmapNode } from './mm-parser'
+import type { MindMapNode } from './mm-parser'
 
 /**
- * A mindmap saved to the library
+ * A MindMap saved to the library
  */
-export interface SavedMindmap {
+export interface SavedMindMap {
   id: string           // UUID
   title: string        // User-provided name
-  data: MindmapNode    // Parsed mindmap data
+  data: MindMapNode    // Parsed MindMap data
   createdAt: number    // Unix timestamp
   rootText: string     // Root node text for card preview
   childCount: number   // Number of children for card preview
 }
 
 /**
- * Payload for creating a new mindmap
+ * Payload for creating a new MindMap
  */
-export interface CreateMindmapPayload {
+export interface CreateMindMapPayload {
   title: string
-  data: MindmapNode
+  data: MindMapNode
 }
 
-// Re-export MindmapNode for convenience
-export type { MindmapNode }
+// Re-export MindMapNode for convenience
+export type { MindMapNode }

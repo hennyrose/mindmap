@@ -1,31 +1,31 @@
 import { kv } from '@vercel/kv'
 import { NextResponse } from 'next/server'
-import type { SavedMindmap, CreateMindmapPayload } from '@/lib/types'
+import type { SavedMindMap, CreateMindMapPayload } from '@/lib/types'
 
-const MINDMAPS_KEY = 'mindmaps'
+const MindMapS_KEY = 'MindMaps'
 
 /**
- * GET /api/mindmaps - List all saved mindmaps
+ * GET /api/MindMaps - List all saved MindMaps
  */
 export async function GET() {
   try {
-    const mindmaps = await kv.get<SavedMindmap[]>(MINDMAPS_KEY)
-    return NextResponse.json(mindmaps || [])
+    const MindMaps = await kv.get<SavedMindMap[]>(MindMapS_KEY)
+    return NextResponse.json(MindMaps || [])
   } catch (error) {
-    console.error('Failed to fetch mindmaps:', error)
+    console.error('Failed to fetch MindMaps:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch mindmaps' },
+      { error: 'Failed to fetch MindMaps' },
       { status: 500 }
     )
   }
 }
 
 /**
- * POST /api/mindmaps - Create a new mindmap
+ * POST /api/MindMaps - Create a new MindMap
  */
 export async function POST(request: Request) {
   try {
-    const body: CreateMindmapPayload = await request.json()
+    const body: CreateMindMapPayload = await request.json()
 
     if (!body.title || !body.data) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const newMindmap: SavedMindmap = {
+    const newMindMap: SavedMindMap = {
       id: crypto.randomUUID(),
       title: body.title,
       data: body.data,
@@ -43,20 +43,20 @@ export async function POST(request: Request) {
       childCount: body.data.children?.length || 0,
     }
 
-    // Get existing mindmaps
-    const mindmaps = (await kv.get<SavedMindmap[]>(MINDMAPS_KEY)) || []
+    // Get existing MindMaps
+    const MindMaps = (await kv.get<SavedMindMap[]>(MindMapS_KEY)) || []
 
-    // Add new mindmap at the beginning
-    mindmaps.unshift(newMindmap)
+    // Add new MindMap at the beginning
+    MindMaps.unshift(newMindMap)
 
     // Save back to KV
-    await kv.set(MINDMAPS_KEY, mindmaps)
+    await kv.set(MindMapS_KEY, MindMaps)
 
-    return NextResponse.json(newMindmap, { status: 201 })
+    return NextResponse.json(newMindMap, { status: 201 })
   } catch (error) {
-    console.error('Failed to create mindmap:', error)
+    console.error('Failed to create MindMap:', error)
     return NextResponse.json(
-      { error: 'Failed to create mindmap' },
+      { error: 'Failed to create MindMap' },
       { status: 500 }
     )
   }

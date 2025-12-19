@@ -41,7 +41,7 @@ export function HelpButton() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         imageSrc="/images/mm-documentation.001.png"
-        imageAlt="Mindmap Documentation"
+        imageAlt="MindMap Documentation"
       />
     </>
   )

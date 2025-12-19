@@ -1,26 +1,26 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import type { MindmapNode } from '@/lib/types'
-import { generateMindmapHTML } from '@/lib/html-generator'
+import type { MindMapNode } from '@/lib/types'
+import { generateMindMapHTML } from '@/lib/html-generator'
 
-interface MindmapViewerModalProps {
+interface MindMapViewerModalProps {
   isOpen: boolean
   onClose: () => void
-  mindmapData: MindmapNode
+  MindMapData: MindMapNode
   title: string
   onSaveToLibrary?: (title: string) => Promise<void>
   showSaveButton?: boolean
 }
 
-export function MindmapViewerModal({
+export function MindMapViewerModal({
   isOpen,
   onClose,
-  mindmapData,
+  MindMapData,
   title,
   onSaveToLibrary,
   showSaveButton = true,
-}: MindmapViewerModalProps) {
+}: MindMapViewerModalProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveTitle, setSaveTitle] = useState(title)
@@ -100,7 +100,7 @@ export function MindmapViewerModal({
   if (!isOpen) return null
 
   // Generate the HTML content for the iframe
-  const htmlContent = generateMindmapHTML(mindmapData, title)
+  const htmlContent = generateMindMapHTML(MindMapData, title)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -217,7 +217,7 @@ export function MindmapViewerModal({
           </button>
         </div>
 
-        {/* Mindmap Container - iframe with generated HTML */}
+        {/* MindMap Container - iframe with generated HTML */}
         <div className="flex-1 overflow-hidden bg-zinc-950">
           <iframe
             ref={iframeRef}

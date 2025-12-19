@@ -1,20 +1,20 @@
 /**
  * Parser for FreeMind/Freeplane .mm XML files
- * Converts XML structure to a tree structure compatible with MindmapRenderer
+ * Converts XML structure to a tree structure compatible with MindMapRenderer
  */
 
-export interface MindmapNode {
+export interface MindMapNode {
   text: string
-  children: MindmapNode[]
+  children: MindMapNode[]
   _expanded?: boolean
 }
 
 /**
  * Parse a FreeMind/Freeplane .mm XML string into a tree structure
  * @param xmlString - The raw XML content of the .mm file
- * @returns The root node of the parsed mindmap tree
+ * @returns The root node of the parsed MindMap tree
  */
-export function parseMMFile(xmlString: string): MindmapNode {
+export function parseMMFile(xmlString: string): MindMapNode {
   const parser = new DOMParser()
   const doc = parser.parseFromString(xmlString, 'application/xml')
 
@@ -42,13 +42,13 @@ export function parseMMFile(xmlString: string): MindmapNode {
 /**
  * Recursively parse a <node> element and its children
  */
-function parseNode(element: Element, depth: number): MindmapNode {
+function parseNode(element: Element, depth: number): MindMapNode {
   // Get the TEXT attribute (node label)
   const text = element.getAttribute('TEXT') || ''
 
   // Parse child nodes
   const childElements = element.querySelectorAll(':scope > node')
-  const children: MindmapNode[] = []
+  const children: MindMapNode[] = []
 
   childElements.forEach((childElement) => {
     children.push(parseNode(childElement, depth + 1))
@@ -65,9 +65,9 @@ function parseNode(element: Element, depth: number): MindmapNode {
 /**
  * Read a File object and parse it as a .mm file
  * @param file - The File object from file input or drag-drop
- * @returns Promise resolving to the parsed mindmap tree
+ * @returns Promise resolving to the parsed MindMap tree
  */
-export async function parseMMFileFromFile(file: File): Promise<MindmapNode> {
+export async function parseMMFileFromFile(file: File): Promise<MindMapNode> {
   const text = await file.text()
   return parseMMFile(text)
 }

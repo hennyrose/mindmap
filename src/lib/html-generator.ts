@@ -1,17 +1,17 @@
 /**
- * HTML Generator for Mindmap
- * Generates a standalone HTML file with embedded mindmap data
+ * HTML Generator for MindMap
+ * Generates a standalone HTML file with embedded MindMap data
  */
 
-import type { MindmapNode } from './mm-parser'
+import type { MindMapNode } from './mm-parser'
 
 /**
- * Generate a standalone HTML file containing the interactive mindmap
- * @param data - The parsed mindmap tree
+ * Generate a standalone HTML file containing the interactive MindMap
+ * @param data - The parsed MindMap tree
  * @param title - Title for the HTML document
  * @returns Complete HTML string ready to be saved as a file
  */
-export function generateMindmapHTML(data: MindmapNode, title: string): string {
+export function generateMindMapHTML(data: MindMapNode, title: string): string {
   const jsonData = JSON.stringify(data, null, 2)
 
   return `<!DOCTYPE html>
@@ -25,7 +25,7 @@ export function generateMindmapHTML(data: MindmapNode, title: string): string {
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ═══════════════════════════════════════════════════════════════
-           DESIGN SYSTEM - Edit these variables to customize your mindmap
+           DESIGN SYSTEM - Edit these variables to customize your MindMap
            ═══════════════════════════════════════════════════════════════ */
         :root {
             /* Layout Spacing */
@@ -87,15 +87,15 @@ export function generateMindmapHTML(data: MindmapNode, title: string): string {
             color: var(--mm-text);
         }
 
-        #mindmap {
+        #MindMap {
             width: 100%;
             height: 100%;
             cursor: grab;
         }
         
-        #mindmap:active { cursor: grabbing; }
+        #MindMap:active { cursor: grabbing; }
         
-        #mindmap svg {
+        #MindMap svg {
             width: 100%;
             height: 100%;
         }
@@ -219,16 +219,16 @@ export function generateMindmapHTML(data: MindmapNode, title: string): string {
     </style>
 </head>
 <body>
-    <div id="mindmap"></div>
+    <div id="MindMap"></div>
     
     <div class="mm-controls">
-        <button class="mm-btn" onclick="mindmap.zoomIn()" title="Zoom In">+</button>
-        <button class="mm-btn" onclick="mindmap.zoomOut()" title="Zoom Out">−</button>
-        <button class="mm-btn" onclick="mindmap.resetView()" title="Reset View">⌂</button>
+        <button class="mm-btn" onclick="MindMap.zoomIn()" title="Zoom In">+</button>
+        <button class="mm-btn" onclick="MindMap.zoomOut()" title="Zoom Out">−</button>
+        <button class="mm-btn" onclick="MindMap.resetView()" title="Reset View">⌂</button>
     </div>
 
-    <!-- Mindmap data as JSON -->
-    <script type="application/json" id="mindmap-data">
+    <!-- MindMap data as JSON -->
+    <script type="application/json" id="MindMap-data">
 ${jsonData}
     </script>
 
@@ -237,10 +237,10 @@ ${jsonData}
 
     <script>
     /* ═══════════════════════════════════════════════════════════════
-       MINDMAP ENGINE
+       MindMap ENGINE
        ═══════════════════════════════════════════════════════════════ */
     
-    class MindmapRenderer {
+    class MindMapRenderer {
         constructor(container, options = {}) {
             this.container = typeof container === 'string' 
                 ? document.querySelector(container) 
@@ -636,19 +636,19 @@ ${jsonData}
     /* ═══════════════════════════════════════════════════════════════
        INITIALIZATION
        ═══════════════════════════════════════════════════════════════ */
-    let mindmap;
+    let MindMap;
     
     document.addEventListener('DOMContentLoaded', () => {
         // Get content from JSON script tag
-        const dataEl = document.getElementById('mindmap-data');
+        const dataEl = document.getElementById('MindMap-data');
         const content = dataEl ? dataEl.textContent : '{}';
         
         // Initialize renderer
-        mindmap = new MindmapRenderer('#mindmap');
-        mindmap.render(JSON.parse(content));
+        MindMap = new MindMapRenderer('#MindMap');
+        MindMap.render(JSON.parse(content));
         
         // Handle window resize
-        window.addEventListener('resize', () => mindmap.resetView());
+        window.addEventListener('resize', () => MindMap.resetView());
     });
     </script>
 </body>
