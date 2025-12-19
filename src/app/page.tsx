@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { FileUploader } from '@/components/FileUploader'
+import { HelpButton } from '@/components/HelpButton'
 import { parseMMFileFromFile, MindmapNode } from '@/lib/mm-parser'
 import { generateMindmapHTML, downloadFile } from '@/lib/html-generator'
 
@@ -42,6 +43,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6">
+      <HelpButton />
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="text-center mb-8">
