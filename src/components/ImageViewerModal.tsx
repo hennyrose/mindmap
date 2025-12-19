@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface ImageViewerModalProps {
   isOpen: boolean
@@ -17,12 +17,21 @@ export function ImageViewerModal({
 }: ImageViewerModalProps) {
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
+  const [panX, setPanX] = useState(0)
+  const [panY, setPanY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
 
-  // Reset zoom and rotation when modal opens
+  // Reset all transforms when modal opens
   useEffect(() => {
     if (isOpen) {
       setZoom(1)
       setRotation(0)
+      setPanX(0)
+      setPanY(0)
     }
   }, [isOpen])
 
@@ -49,15 +58,84 @@ export function ImageViewerModal({
     }
   }, [isOpen])
 
+  // Handle wheel zoom (mouse wheel and touchpad pinch)
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return
+
+    const container = containerRef.current
+    
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      
+      // Detect pinch gesture (ctrlKey is set for touchpad pinch on most browsers)
+      const isPinch = e.ctrlKey
+      const delta = isPinch ? -e.deltaY : -e.deltaY
+      
+      // Adjust zoom speed
+      const zoomSpeed = isPinch ? 0.01 : 0.001
+      const zoomDelta = delta * zoomSpeed
+      
+      setZoom((prevZoom) => {
+        const newZoom = prevZoom + zoomDelta
+        return Math.min(Math.max(newZoom, 0.1), 5)
+      })
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [isOpen])
+
+  // Handle mouse/touch drag to pan
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true)
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    
+    setDragStart({
+      x: clientX - panX,
+      y: clientY - panY,
+    })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    
+    setPanX(clientX - dragStart.x)
+    setPanY(clientY - dragStart.y)
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  // Global mouse up listener
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseUp = () => setIsDragging(false)
+      window.addEventListener('mouseup', handleGlobalMouseUp)
+      window.addEventListener('touchend', handleGlobalMouseUp)
+      return () => {
+        window.removeEventListener('mouseup', handleGlobalMouseUp)
+        window.removeEventListener('touchend', handleGlobalMouseUp)
+      }
+    }
+  }, [isDragging])
+
   if (!isOpen) return null
 
-  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3))
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5))
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 5))
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.1))
   const handleRotateLeft = () => setRotation((prev) => prev - 90)
   const handleRotateRight = () => setRotation((prev) => prev + 90)
   const handleReset = () => {
     setZoom(1)
     setRotation(0)
+    setPanX(0)
+    setPanY(0)
   }
 
   return (
@@ -79,13 +157,14 @@ export function ImageViewerModal({
             {/* Zoom Out */}
             <button
               onClick={handleZoomOut}
-              disabled={zoom <= 0.5}
+              disabled={zoom <= 0.1}
               className="p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 
                        border border-zinc-700/50 hover:border-zinc-600/50
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150
                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-800/50"
               aria-label="Zoom out"
+              title="Zoom out (or scroll down)"
             >
               <svg
                 className="w-5 h-5"
@@ -105,13 +184,14 @@ export function ImageViewerModal({
             {/* Zoom In */}
             <button
               onClick={handleZoomIn}
-              disabled={zoom >= 3}
+              disabled={zoom >= 5}
               className="p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 
                        border border-zinc-700/50 hover:border-zinc-600/50
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150
                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-800/50"
               aria-label="Zoom in"
+              title="Zoom in (or scroll up)"
             >
               <svg
                 className="w-5 h-5"
@@ -136,6 +216,7 @@ export function ImageViewerModal({
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150"
               aria-label="Rotate left"
+              title="Rotate left 90°"
             >
               <svg
                 className="w-5 h-5"
@@ -160,6 +241,7 @@ export function ImageViewerModal({
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150"
               aria-label="Rotate right"
+              title="Rotate right 90°"
             >
               <svg
                 className="w-5 h-5 transform scale-x-[-1]"
@@ -184,6 +266,7 @@ export function ImageViewerModal({
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150"
               aria-label="Reset view"
+              title="Reset zoom, pan, and rotation"
             >
               <svg
                 className="w-5 h-5"
@@ -211,6 +294,7 @@ export function ImageViewerModal({
                        text-zinc-300 hover:text-zinc-100
                        transition-all duration-150"
               aria-label="Close"
+              title="Close (ESC)"
             >
               <svg
                 className="w-5 h-5"
@@ -230,18 +314,31 @@ export function ImageViewerModal({
         </div>
 
         {/* Image Container */}
-        <div className="flex-1 overflow-auto bg-zinc-950/50">
+        <div 
+          ref={containerRef}
+          className="flex-1 overflow-hidden bg-zinc-950/50 select-none"
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
+        >
           <div className="min-h-full flex items-center justify-center p-8">
             <div
-              className="transition-transform duration-300 ease-out"
+              ref={imageContainerRef}
+              className="transition-transform duration-100 ease-out"
               style={{
-                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                transform: `translate(${panX}px, ${panY}px) scale(${zoom}) rotate(${rotation}deg)`,
+                willChange: isDragging ? 'transform' : 'auto',
               }}
             >
               <img
                 src={imageSrc}
                 alt={imageAlt}
-                className="max-w-full h-auto rounded-lg shadow-2xl"
+                className="max-w-full h-auto rounded-lg shadow-2xl pointer-events-none"
                 draggable={false}
               />
             </div>
@@ -251,7 +348,7 @@ export function ImageViewerModal({
         {/* Footer with Zoom Info */}
         <div className="px-6 py-3 border-t border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
           <div className="flex items-center justify-between text-sm text-zinc-400">
-            <span>Use scroll to zoom, ESC to close</span>
+            <span>Scroll to zoom • Drag to pan • ESC to close</span>
             <span>
               Zoom: {Math.round(zoom * 100)}% | Rotation: {rotation % 360}°
             </span>
