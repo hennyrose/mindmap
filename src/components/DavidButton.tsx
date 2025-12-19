@@ -35,7 +35,7 @@ export function DavidButton({ onClick }: DavidButtonProps) {
       <span
         className="relative z-10 px-2 py-0.5 rounded-full
                    bg-white/10 border border-white/20
-                   text-[10px] font-semibold uppercase tracking-wider
+                   text-[10px] font-semibold tracking-wider
                    text-zinc-300"
       >
         preBeta
