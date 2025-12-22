@@ -5,6 +5,15 @@
 import type { MindmapNode } from './mm-parser'
 
 /**
+ * Attachment for a single mindmap node (block)
+ */
+export interface BlockAttachment {
+  nodeId: string       // Unique ID for the node (path-based, e.g., "0-1-2")
+  pictures: string[]   // Array of Vercel Blob URLs
+  notes: string[]      // Array of plain text notes
+}
+
+/**
  * A mindmap saved to the library
  */
 export interface SavedMindmap {
@@ -14,6 +23,7 @@ export interface SavedMindmap {
   createdAt: number    // Unix timestamp
   rootText: string     // Root node text for card preview
   childCount: number   // Number of children for card preview
+  attachments?: Record<string, BlockAttachment>  // keyed by nodeId
 }
 
 /**

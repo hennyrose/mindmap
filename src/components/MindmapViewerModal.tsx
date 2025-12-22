@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import type { MindmapNode } from '@/lib/types'
-import { generateMindmapHTML } from '@/lib/html-generator'
+import type { MindmapNode, BlockAttachment } from '@/lib/types'
+import { generateMindmapHTML, generateMindmapHTMLWithNodeClick, generateMindmapHTMLWithNotes, downloadFile } from '@/lib/html-generator'
+import { ensureNodeIds } from '@/lib/mm-parser'
+import { BlockAttachmentPopup } from './BlockAttachmentPopup'
+import { BlockAttachmentEditor } from './BlockAttachmentEditor'
+import { ImageViewerModal } from './ImageViewerModal'
 
 interface MindmapViewerModalProps {
   isOpen: boolean
@@ -11,6 +15,15 @@ interface MindmapViewerModalProps {
   title: string
   onSaveToLibrary?: (title: string) => Promise<void>
   showSaveButton?: boolean
+  isDavidMode?: boolean
+  mindmapId?: string  // If viewing from library
+  attachments?: Record<string, BlockAttachment>  // Initial attachments
+}
+
+interface SelectedNode {
+  nodeId: string
+  text: string
+  position: { x: number; y: number }
 }
 
 export function MindmapViewerModal({
@@ -20,13 +33,26 @@ export function MindmapViewerModal({
   title,
   onSaveToLibrary,
   showSaveButton = true,
+  isDavidMode = false,
+  mindmapId,
+  attachments: initialAttachments,
 }: MindmapViewerModalProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveTitle, setSaveTitle] = useState(title)
   const [showTitleInput, setShowTitleInput] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
+
+  // David mode specific state
+  const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null)
+  const [showEditor, setShowEditor] = useState(false)
+  const [attachments, setAttachments] = useState<Record<string, BlockAttachment>>(initialAttachments || {})
+  const [viewingImage, setViewingImage] = useState<string | null>(null)
+
+  // Ensure mindmap data has node IDs
+  const processedData = ensureNodeIds(mindmapData)
 
   // Reset states when modal opens
   useEffect(() => {
@@ -34,8 +60,31 @@ export function MindmapViewerModal({
       setSaveSuccess(false)
       setSaveTitle(title)
       setShowTitleInput(false)
+      setSelectedNode(null)
+      setShowEditor(false)
+      setAttachments(initialAttachments || {})
     }
-  }, [isOpen, title])
+  }, [isOpen, title, initialAttachments])
+
+  // Fetch attachments if viewing from library
+  useEffect(() => {
+    if (isOpen && mindmapId && isDavidMode) {
+      fetchAttachments()
+    }
+  }, [isOpen, mindmapId, isDavidMode])
+
+  const fetchAttachments = async () => {
+    if (!mindmapId) return
+    try {
+      const response = await fetch(`/api/mindmaps/${mindmapId}/attachments`)
+      if (response.ok) {
+        const data = await response.json()
+        setAttachments(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch attachments:', error)
+    }
+  }
 
   // Focus title input when shown
   useEffect(() => {
@@ -49,7 +98,11 @@ export function MindmapViewerModal({
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        if (showTitleInput) {
+        if (showEditor) {
+          setShowEditor(false)
+        } else if (selectedNode) {
+          setSelectedNode(null)
+        } else if (showTitleInput) {
           setShowTitleInput(false)
         } else {
           onClose()
@@ -58,7 +111,56 @@ export function MindmapViewerModal({
     }
     window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onClose, showTitleInput])
+  }, [isOpen, onClose, showTitleInput, selectedNode, showEditor])
+
+  // Handle messages from iframe (node clicks)
+  useEffect(() => {
+    if (!isDavidMode || !isOpen) return
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'nodeClick') {
+        const { nodeId, text, screenX, screenY } = event.data
+        
+        // Calculate position relative to the container
+        const containerRect = containerRef.current?.getBoundingClientRect()
+        if (containerRect) {
+          setSelectedNode({
+            nodeId,
+            text,
+            position: {
+              x: screenX,
+              y: screenY + 20, // Offset below the node
+            },
+          })
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [isDavidMode, isOpen])
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    if (!selectedNode) return
+
+    const handleClick = (e: MouseEvent) => {
+      // Don't close if clicking within popup
+      const target = e.target as HTMLElement
+      if (target.closest('[data-attachment-popup]')) return
+      setSelectedNode(null)
+    }
+
+    // Add slight delay to prevent immediate close
+    const timeout = setTimeout(() => {
+      window.addEventListener('click', handleClick)
+    }, 100)
+
+    return () => {
+      clearTimeout(timeout)
+      window.removeEventListener('click', handleClick)
+    }
+  }, [selectedNode])
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -97,24 +199,74 @@ export function MindmapViewerModal({
     }
   }
 
+  const handleEditAttachment = () => {
+    setShowEditor(true)
+  }
+
+  const handleSaveAttachment = useCallback(async (attachment: BlockAttachment) => {
+    if (!mindmapId) {
+      // Just update local state if not saved to library
+      setAttachments((prev) => ({
+        ...prev,
+        [attachment.nodeId]: attachment,
+      }))
+      setShowEditor(false)
+      setSelectedNode(null)
+      return
+    }
+
+    // Save to server
+    try {
+      const response = await fetch(`/api/mindmaps/${mindmapId}/attachments`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodeId: attachment.nodeId, attachment }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setAttachments(result.attachments || {})
+        setShowEditor(false)
+        setSelectedNode(null)
+      }
+    } catch (error) {
+      console.error('Failed to save attachment:', error)
+    }
+  }, [mindmapId])
+
+  const handleDownloadHTML = useCallback(() => {
+    const html = generateMindmapHTMLWithNotes(processedData, title, attachments)
+    const filename = `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.html`
+    downloadFile(html, filename)
+  }, [processedData, title, attachments])
+
   if (!isOpen) return null
 
   // Generate the HTML content for the iframe
-  const htmlContent = generateMindmapHTML(mindmapData, title)
+  // Use version with node click support in David mode
+  const htmlContent = isDavidMode 
+    ? generateMindmapHTMLWithNodeClick(processedData, title)
+    : generateMindmapHTML(processedData, title)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" ref={containerRef}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={onClose}
+        onClick={() => {
+          if (selectedNode) {
+            setSelectedNode(null)
+          } else {
+            onClose()
+          }
+        }}
       />
 
       {/* Modal Container */}
       <div className="relative w-full h-full max-w-[95vw] max-h-[95vh] m-4 flex flex-col bg-zinc-900/95 rounded-2xl shadow-2xl border border-zinc-800/50 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
-          {/* Left side - Create Page Button */}
+          {/* Left side - Create Page Button / Download HTML */}
           <div className="flex items-center gap-3">
             {showSaveButton && onSaveToLibrary && (
               <>
@@ -184,6 +336,28 @@ export function MindmapViewerModal({
                 )}
               </>
             )}
+
+            {/* Download HTML button (for library view in David mode) */}
+            {isDavidMode && mindmapId && (
+              <button
+                onClick={handleDownloadHTML}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl
+                         bg-emerald-500/20 hover:bg-emerald-500/30
+                         border border-emerald-500/30 hover:border-emerald-500/50
+                         text-emerald-400 text-sm font-medium
+                         transition-all duration-200 ease-out"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                Download HTML
+              </button>
+            )}
           </div>
 
           {/* Center - Title */}
@@ -218,7 +392,7 @@ export function MindmapViewerModal({
         </div>
 
         {/* Mindmap Container - iframe with generated HTML */}
-        <div className="flex-1 overflow-hidden bg-zinc-950">
+        <div className="flex-1 overflow-hidden bg-zinc-950 relative">
           <iframe
             ref={iframeRef}
             srcDoc={htmlContent}
@@ -226,16 +400,56 @@ export function MindmapViewerModal({
             title={title}
             sandbox="allow-scripts"
           />
+
+          {/* Block Attachment Popup (David mode only) */}
+          {isDavidMode && selectedNode && !showEditor && (
+            <div data-attachment-popup>
+              <BlockAttachmentPopup
+                nodeText={selectedNode.text}
+                nodeId={selectedNode.nodeId}
+                attachment={attachments[selectedNode.nodeId]}
+                position={selectedNode.position}
+                onEdit={handleEditAttachment}
+                onClose={() => setSelectedNode(null)}
+                onImageClick={(url) => setViewingImage(url)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
           <div className="flex items-center justify-between text-sm text-zinc-400">
-            <span>Scroll to zoom • Drag to pan • Click nodes to expand</span>
+            <span>
+              Scroll to zoom • Drag to pan • Click nodes to expand
+              {isDavidMode && ' • Click to attach'}
+            </span>
             <span>ESC to close</span>
           </div>
         </div>
       </div>
+
+      {/* Block Attachment Editor Modal */}
+      {isDavidMode && showEditor && selectedNode && (
+        <BlockAttachmentEditor
+          isOpen={showEditor}
+          nodeText={selectedNode.text}
+          nodeId={selectedNode.nodeId}
+          initialAttachment={attachments[selectedNode.nodeId]}
+          onSave={handleSaveAttachment}
+          onCancel={() => setShowEditor(false)}
+        />
+      )}
+
+      {/* Image Viewer Modal */}
+      {viewingImage && (
+        <ImageViewerModal
+          isOpen={!!viewingImage}
+          imageSrc={viewingImage}
+          imageAlt="Attachment"
+          onClose={() => setViewingImage(null)}
+        />
+      )}
     </div>
   )
 }

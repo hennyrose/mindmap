@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { LibraryModal } from './LibraryModal'
-import type { SavedMindmap, MindmapNode } from '@/lib/types'
+import type { SavedMindmap } from '@/lib/types'
 
 interface LibraryButtonProps {
-  onOpenMindmap?: (data: MindmapNode, title: string) => void
+  onOpenMindmap?: (mindmap: SavedMindmap) => void
 }
 
 export function LibraryButton({ onOpenMindmap }: LibraryButtonProps) {
@@ -13,7 +13,7 @@ export function LibraryButton({ onOpenMindmap }: LibraryButtonProps) {
 
   const handleSelectMindmap = (mindmap: SavedMindmap) => {
     if (onOpenMindmap) {
-      onOpenMindmap(mindmap.data, mindmap.title)
+      onOpenMindmap(mindmap)
     }
     setIsOpen(false)
   }

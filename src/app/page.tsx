@@ -10,7 +10,7 @@ import { StandardRenderButton } from '@/components/StandardRenderButton'
 import { MindMapCreationModal } from '@/components/MindMapCreationModal'
 import { parseMMFileFromFile } from '@/lib/mm-parser'
 import { generateMindmapHTML, downloadFile } from '@/lib/html-generator'
-import type { MindmapNode } from '@/lib/types'
+import type { MindmapNode, SavedMindmap, BlockAttachment } from '@/lib/types'
 
 export default function Home() {
   const [parsedData, setParsedData] = useState<MindmapNode | null>(null)
@@ -22,6 +22,8 @@ export default function Home() {
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [viewerData, setViewerData] = useState<MindmapNode | null>(null)
   const [viewerTitle, setViewerTitle] = useState('')
+  const [viewerMindmapId, setViewerMindmapId] = useState<string | undefined>(undefined)
+  const [viewerAttachments, setViewerAttachments] = useState<Record<string, BlockAttachment> | undefined>(undefined)
 
   // David mode state
   const [isDavidMode, setIsDavidMode] = useState(false)
@@ -60,6 +62,8 @@ export default function Home() {
     if (!parsedData || !outputName.trim()) return
     setViewerData(parsedData)
     setViewerTitle(outputName.trim())
+    setViewerMindmapId(undefined)  // Not from library
+    setViewerAttachments(undefined)
     setIsViewerOpen(true)
   }, [parsedData, outputName])
 
@@ -101,9 +105,11 @@ export default function Home() {
   }, [])
 
   // Handler for opening mindmap from library
-  const handleOpenFromLibrary = useCallback((data: MindmapNode, title: string) => {
-    setViewerData(data)
-    setViewerTitle(title)
+  const handleOpenFromLibrary = useCallback((mindmap: SavedMindmap) => {
+    setViewerData(mindmap.data)
+    setViewerTitle(mindmap.title)
+    setViewerMindmapId(mindmap.id)
+    setViewerAttachments(mindmap.attachments)
     setIsViewerOpen(true)
   }, [])
 
@@ -369,7 +375,10 @@ export default function Home() {
             mindmapData={viewerData}
             title={viewerTitle}
             onSaveToLibrary={handleSaveToLibrary}
-            showSaveButton={true}
+            showSaveButton={!viewerMindmapId}  // Don't show save if already from library
+            isDavidMode={isDavidMode}
+            mindmapId={viewerMindmapId}
+            attachments={viewerAttachments}
           />
         )}
 

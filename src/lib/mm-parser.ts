@@ -7,6 +7,7 @@ export interface MindmapNode {
   text: string
   children: MindmapNode[]
   _expanded?: boolean
+  _nodeId?: string  // Unique identifier for attachments (path-based, e.g., "0", "0-1", "0-1-2")
 }
 
 /**
@@ -41,8 +42,11 @@ export function parseMMFile(xmlString: string): MindmapNode {
 
 /**
  * Recursively parse a <node> element and its children
+ * @param element - The DOM element to parse
+ * @param depth - Current depth in the tree
+ * @param pathPrefix - The path prefix for generating node IDs
  */
-function parseNode(element: Element, depth: number): MindmapNode {
+function parseNode(element: Element, depth: number, pathPrefix: string = '0'): MindmapNode {
   // Get the TEXT attribute (node label)
   const text = element.getAttribute('TEXT') || ''
 
@@ -50,8 +54,9 @@ function parseNode(element: Element, depth: number): MindmapNode {
   const childElements = element.querySelectorAll(':scope > node')
   const children: MindmapNode[] = []
 
-  childElements.forEach((childElement) => {
-    children.push(parseNode(childElement, depth + 1))
+  childElements.forEach((childElement, index) => {
+    const childPath = depth === 0 ? `${pathPrefix}-${index}` : `${pathPrefix}-${index}`
+    children.push(parseNode(childElement, depth + 1, depth === 0 ? `0-${index}` : `${pathPrefix}-${index}`))
   })
 
   return {
@@ -59,7 +64,38 @@ function parseNode(element: Element, depth: number): MindmapNode {
     children,
     // Only root node starts expanded, all others collapsed
     _expanded: depth === 0,
+    _nodeId: pathPrefix,
   }
+}
+
+/**
+ * Assign stable node IDs to a mindmap tree (for trees without IDs)
+ * IDs are path-based: "0" for root, "0-0" for first child, "0-0-1" for second grandchild, etc.
+ * @param node - The root node of the tree
+ * @param pathPrefix - The current path prefix
+ * @returns The same tree with node IDs assigned
+ */
+export function assignNodeIds(node: MindmapNode, pathPrefix: string = '0'): MindmapNode {
+  return {
+    ...node,
+    _nodeId: pathPrefix,
+    children: node.children.map((child, index) => 
+      assignNodeIds(child, `${pathPrefix}-${index}`)
+    ),
+  }
+}
+
+/**
+ * Ensure all nodes in a tree have IDs assigned
+ * If root already has an ID, assumes all children do too
+ * @param node - The root node to check/update
+ * @returns The tree with IDs guaranteed
+ */
+export function ensureNodeIds(node: MindmapNode): MindmapNode {
+  if (node._nodeId) {
+    return node
+  }
+  return assignNodeIds(node)
 }
 
 /**
