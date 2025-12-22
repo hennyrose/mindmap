@@ -162,7 +162,10 @@ export function BlockAttachmentEditor({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] m-4 flex flex-col bg-zinc-900/95 rounded-2xl shadow-2xl border border-zinc-800/50 overflow-hidden">
+      <div 
+        className="relative w-full max-w-2xl max-h-[85vh] m-4 flex flex-col bg-zinc-900/95 rounded-2xl shadow-2xl border border-zinc-800/50 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
           <div className="flex-1 min-w-0 mr-4">
